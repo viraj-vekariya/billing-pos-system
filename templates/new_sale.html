@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}New Sale{% endblock %}
+{% block content %}
+    <h1>New sale</h1>
+
+    <div class="sale-layout">
+        <div class="panel">
+            <h2>Add item</h2>
+            <label>Product
+                <select id="product-select">
+                    <option value="">-- select product --</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}"
+                            data-name="{{ p.name }}"
+                            data-price="{{ p.unit_price }}"
+                            data-tax="{{ p.tax_rate_percent }}"
+                            data-stock="{{ p.stock_quantity }}">
+                        {{ p.name }} ({{ p.sku }}) - stock {{ p.stock_quantity }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Quantity
+                <input type="number" id="qty-input" min="1" value="1">
+            </label>
+            <button type="button" class="btn" id="add-item-btn">Add to cart</button>
+            <p id="add-error" class="error-text"></p>
+        </div>
+
+        <div class="panel">
+            <h2>Cart</h2>
+            <table class="data-table" id="cart-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Unit price</th>
+                        <th>Tax %</th>
+                        <th>Line total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cart-body"></tbody>
+            </table>
+
+            <div class="discount-row">
+                <label>Discount type
+                    <select id="discount-type">
+                        <option value="none">None</option>
+                        <option value="percent">Percent</option>
+                        <option value="flat">Flat amount</option>
+                    </select>
+                </label>
+                <label>Discount value
+                    <input type="number" id="discount-value" min="0" step="0.01" value="0">
+                </label>
+                <label>Payment method
+                    <select id="payment-method">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="upi">UPI</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="totals-box">
+                <div><span>Subtotal</span><span id="t-subtotal">0.00</span></div>
+                <div><span>Discount</span><span id="t-discount">0.00</span></div>
+                <div><span>Tax</span><span id="t-tax">0.00</span></div>
+                <div class="grand"><span>Grand total</span><span id="t-grand">0.00</span></div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="checkout-btn">Checkout</button>
+            <p id="checkout-error" class="error-text"></p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='cart.js') }}"></script>
+{% endblock %}

@@ -130,3 +130,71 @@ input, select {
     font-size: 13px;
     min-height: 18px;
 }
+
+.sale-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.discount-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+}
+
+.discount-row label {
+    flex: 1;
+    font-size: 14px;
+}
+
+.totals-box {
+    margin-top: 14px;
+    border-top: 1px solid #e2e4ea;
+    padding-top: 10px;
+    font-size: 14px;
+}
+
+.totals-box div {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+}
+
+.totals-box .grand {
+    font-weight: 700;
+    font-size: 16px;
+    border-top: 1px solid #e2e4ea;
+    margin-top: 6px;
+    padding-top: 8px;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #b3261e;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+}
+
+.receipt {
+    background: #fff;
+    border: 1px solid #e2e4ea;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 480px;
+}
+
+.receipt .thanks {
+    text-align: center;
+    margin: 16px 0;
+    font-style: italic;
+}
+
+@media print {
+    .topnav, .no-print { display: none; }
+    .container { padding: 0; }
+    .receipt { border: none; }
+}

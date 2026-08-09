@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ bill.bill_number }}{% endblock %}
+{% block content %}
+    <div class="receipt">
+        <h1>Counter POS</h1>
+        <p>Bill: {{ bill.bill_number }}</p>
+        <p>Date: {{ bill.created_at }}</p>
+        <p>Payment: {{ bill.payment_method }}</p>
+        <hr>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Tax %</th>
+                    <th>Line total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.product_name }} ({{ item.sku }})</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ "%.2f"|format(item.unit_price_at_sale) }}</td>
+                    <td>{{ item.tax_rate_at_sale }}</td>
+                    <td>{{ "%.2f"|format(item.line_total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+        <div class="totals-box">
+            <div><span>Subtotal</span><span>{{ "%.2f"|format(bill.subtotal) }}</span></div>
+            {% if bill.discount_amount > 0 %}
+            <div><span>Discount ({{ bill.discount_type }})</span><span>-{{ "%.2f"|format(bill.discount_amount) }}</span></div>
+            {% endif %}
+            <div><span>Tax</span><span>{{ "%.2f"|format(bill.tax_amount) }}</span></div>
+            <div class="grand"><span>Grand total</span><span>{{ "%.2f"|format(bill.grand_total) }}</span></div>
+        </div>
+        <p class="thanks">Thank you for shopping with us.</p>
+        <button onclick="window.print()" class="btn no-print">Print receipt</button>
+        <a class="btn no-print" href="{{ url_for('new_sale') }}">New sale</a>
+    </div>
+{% endblock %}
