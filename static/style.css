@@ -1,0 +1,132 @@
+* { box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background: #f4f5f7;
+    color: #1f2430;
+}
+
+.topnav {
+    background: #1f2430;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.topnav .brand {
+    color: #fff;
+    font-weight: 700;
+    margin-right: 12px;
+}
+
+.topnav a {
+    color: #c9cddb;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.topnav a:hover {
+    color: #fff;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+h1 {
+    font-size: 22px;
+    margin: 0 0 12px;
+}
+
+h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #e2e4ea;
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.data-table th, .data-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e4ea;
+    font-size: 14px;
+}
+
+.data-table th {
+    background: #f0f1f4;
+    font-weight: 600;
+}
+
+tr.low-stock td {
+    color: #b3261e;
+}
+
+.form label, .inline-form label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+input, select {
+    display: block;
+    margin-top: 4px;
+    padding: 7px 9px;
+    border: 1px solid #c7c9d3;
+    border-radius: 5px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.btn {
+    display: inline-block;
+    background: #2b3a67;
+    color: #fff;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn:hover {
+    background: #223056;
+}
+
+.flash {
+    background: #fff3cd;
+    border: 1px solid #ffe08a;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.error-text {
+    color: #b3261e;
+    font-size: 13px;
+    min-height: 18px;
+}
