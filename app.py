@@ -180,6 +180,15 @@ def checkout():
         if quantity <= 0:
             conn.close()
             return jsonify({"error": "Quantity must be positive."}), 400
+        # reject the whole sale on the first insufficient-stock line found -
+        # nothing gets written to the DB until every line has been checked,
+        # so a sale never partially commits stock changes
+        if quantity > product["stock_quantity"]:
+            conn.close()
+            return jsonify({
+                "error": f"Insufficient stock for {product['name']}: "
+                         f"requested {quantity}, available {product['stock_quantity']}."
+            }), 409
         cart_lines.append({
             "product_id": product["id"],
             "product_name": product["name"],
@@ -192,26 +201,37 @@ def checkout():
     totals = compute_totals(cart_lines, discount_type, discount_value)
 
     bill_number = generate_bill_number(conn)
-    conn.execute(
-        "INSERT INTO bills (bill_number, created_at, subtotal, discount_type, discount_value, "
-        "discount_amount, taxable_amount, tax_amount, grand_total, payment_method) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (bill_number, datetime.now().isoformat(timespec="seconds"), totals["subtotal"],
-         discount_type, discount_value, totals["discount_amount"], totals["taxable_amount"],
-         totals["tax_amount"], totals["grand_total"], payment_method),
-    )
-    bill_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
-
-    for line in cart_lines:
+    try:
+        conn.execute("BEGIN")
         conn.execute(
-            "INSERT INTO bill_items (bill_id, product_id, product_name, sku, quantity, "
-            "unit_price_at_sale, tax_rate_at_sale, line_subtotal, line_tax, line_total) "
+            "INSERT INTO bills (bill_number, created_at, subtotal, discount_type, discount_value, "
+            "discount_amount, taxable_amount, tax_amount, grand_total, payment_method) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (bill_id, line["product_id"], line["product_name"], line["sku"], line["quantity"],
-             line["unit_price"], line["tax_rate_percent"], line["line_subtotal"],
-             line["line_tax"], line["line_total"]),
+            (bill_number, datetime.now().isoformat(timespec="seconds"), totals["subtotal"],
+             discount_type, discount_value, totals["discount_amount"], totals["taxable_amount"],
+             totals["tax_amount"], totals["grand_total"], payment_method),
         )
-    conn.commit()
+        bill_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+
+        for line in cart_lines:
+            conn.execute(
+                "INSERT INTO bill_items (bill_id, product_id, product_name, sku, quantity, "
+                "unit_price_at_sale, tax_rate_at_sale, line_subtotal, line_tax, line_total) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (bill_id, line["product_id"], line["product_name"], line["sku"], line["quantity"],
+                 line["unit_price"], line["tax_rate_percent"], line["line_subtotal"],
+                 line["line_tax"], line["line_total"]),
+            )
+            conn.execute(
+                "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?",
+                (line["quantity"], line["product_id"]),
+            )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": f"Checkout failed: {e}"}), 500
+
     conn.close()
     return jsonify({"bill_id": bill_id})
 
