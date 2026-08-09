@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+    <h1>Reports</h1>
+
+    <div class="panel">
+        <h2>Daily revenue</h2>
+        <form method="get" class="inline-form">
+            <label>Date <input type="date" name="date" value="{{ report_date }}"></label>
+            <button type="submit" class="btn">View</button>
+        </form>
+        <p>Bills on {{ report_date }}: <strong>{{ day_row.bill_count }}</strong></p>
+        <p>Revenue on {{ report_date }}: <strong>{{ "%.2f"|format(day_row.revenue) }}</strong></p>
+    </div>
+
+    <div class="panel">
+        <h2>All-time</h2>
+        <p>Total bills: <strong>{{ overall.bill_count }}</strong></p>
+        <p>Total revenue: <strong>{{ "%.2f"|format(overall.revenue) }}</strong></p>
+    </div>
+
+    <div class="panel">
+        <h2>Top selling products (by quantity)</h2>
+        <table class="data-table">
+            <thead><tr><th>Product</th><th>SKU</th><th>Qty sold</th><th>Revenue</th></tr></thead>
+            <tbody>
+                {% for r in top_by_qty %}
+                <tr>
+                    <td>{{ r.product_name }}</td>
+                    <td>{{ r.sku }}</td>
+                    <td>{{ r.total_qty }}</td>
+                    <td>{{ "%.2f"|format(r.total_revenue) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">No sales yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="panel">
+        <h2>Top selling products (by revenue)</h2>
+        <table class="data-table">
+            <thead><tr><th>Product</th><th>SKU</th><th>Qty sold</th><th>Revenue</th></tr></thead>
+            <tbody>
+                {% for r in top_by_revenue %}
+                <tr>
+                    <td>{{ r.product_name }}</td>
+                    <td>{{ r.sku }}</td>
+                    <td>{{ r.total_qty }}</td>
+                    <td>{{ "%.2f"|format(r.total_revenue) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">No sales yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

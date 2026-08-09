@@ -10,6 +10,8 @@
         <span class="brand">Counter POS</span>
         <a href="{{ url_for('new_sale') }}">New Sale</a>
         <a href="{{ url_for('products') }}">Products</a>
+        <a href="{{ url_for('history') }}">Sales History</a>
+        <a href="{{ url_for('reports') }}">Reports</a>
     </nav>
     <main class="container">
         {% with messages = get_flashed_messages() %}

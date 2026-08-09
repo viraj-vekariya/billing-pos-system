@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from datetime import datetime
+from datetime import datetime, date
 import sqlite3
 
 from db import get_db
@@ -249,6 +249,51 @@ def receipt(bill_id):
     ).fetchall()
     conn.close()
     return render_template("receipt.html", bill=bill, items=items)
+
+
+@app.route("/history")
+def history():
+    conn = get_db()
+    bills = conn.execute("SELECT * FROM bills ORDER BY created_at DESC").fetchall()
+    conn.close()
+    return render_template("history.html", bills=bills)
+
+
+@app.route("/reports")
+def reports():
+    conn = get_db()
+
+    report_date = request.args.get("date", date.today().isoformat())
+
+    day_row = conn.execute(
+        "SELECT COUNT(*) AS bill_count, COALESCE(SUM(grand_total), 0) AS revenue "
+        "FROM bills WHERE substr(created_at, 1, 10) = ?",
+        (report_date,),
+    ).fetchone()
+
+    top_by_qty = conn.execute(
+        "SELECT product_name, sku, SUM(quantity) AS total_qty, SUM(line_total) AS total_revenue "
+        "FROM bill_items GROUP BY product_id ORDER BY total_qty DESC LIMIT 5"
+    ).fetchall()
+
+    top_by_revenue = conn.execute(
+        "SELECT product_name, sku, SUM(quantity) AS total_qty, SUM(line_total) AS total_revenue "
+        "FROM bill_items GROUP BY product_id ORDER BY total_revenue DESC LIMIT 5"
+    ).fetchall()
+
+    overall = conn.execute(
+        "SELECT COUNT(*) AS bill_count, COALESCE(SUM(grand_total), 0) AS revenue FROM bills"
+    ).fetchone()
+
+    conn.close()
+    return render_template(
+        "reports.html",
+        report_date=report_date,
+        day_row=day_row,
+        top_by_qty=top_by_qty,
+        top_by_revenue=top_by_revenue,
+        overall=overall,
+    )
 
 
 if __name__ == "__main__":

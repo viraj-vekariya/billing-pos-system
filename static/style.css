@@ -90,6 +90,16 @@ tr.low-stock td {
     font-size: 14px;
 }
 
+.inline-form {
+    display: flex;
+    align-items: end;
+    gap: 12px;
+}
+
+.inline-form label {
+    margin-bottom: 0;
+}
+
 input, select {
     display: block;
     margin-top: 4px;
@@ -114,6 +124,14 @@ input, select {
 
 .btn:hover {
     background: #223056;
+}
+
+.btn-primary {
+    background: #1f8a4c;
+}
+
+.btn-primary:hover {
+    background: #176b3a;
 }
 
 .flash {
