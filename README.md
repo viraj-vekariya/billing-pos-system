@@ -92,6 +92,15 @@ This matters because a POS silently fulfilling half a sale (charging for 5 items
 - Sales history: list of all past bills
 - Reports: revenue + bill count for a chosen day, all-time totals, top-5 products by quantity sold and by revenue
 
+## Testing
+
+`compute_totals` (per-line tax, proportional discounts, rounding) and the product/checkout routes (duplicate SKU, negative price, insufficient stock, atomic-sale rollback) are covered with pytest, run against a temporary SQLite file so it never touches `instance/pos.db`.
+
+```bash
+pip install -r requirements-dev.txt
+pytest tests/ -v
+```
+
 ## Limitations (honestly)
 
 - Single till / single user — no login, no cashier accounts, no concurrent-register handling beyond SQLite's own transaction locking
