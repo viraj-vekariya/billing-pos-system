@@ -251,6 +251,102 @@ def receipt(bill_id):
     return render_template("receipt.html", bill=bill, items=items)
 
 
+# ---------- Returns / refunds ----------
+
+def already_returned_quantity(conn, bill_item_id):
+    row = conn.execute(
+        "SELECT COALESCE(SUM(quantity), 0) AS qty FROM return_items WHERE bill_item_id = ?",
+        (bill_item_id,),
+    ).fetchone()
+    return row["qty"]
+
+
+@app.route("/returns/<int:bill_id>", methods=["POST"])
+def process_return(bill_id):
+    """Process a full or partial return against an existing bill.
+
+    Refund per unit is derived from the bill_item's own line_total / quantity -
+    that figure already has the bill's discount and tax baked in proportionally
+    (see compute_totals), so refunding off it automatically refunds at the price
+    the customer actually paid rather than at the undiscounted list price.
+    """
+    data = request.get_json()
+    requested_lines = data.get("items", [])
+    reason = (data.get("reason") or "").strip() or None
+
+    if not requested_lines:
+        return jsonify({"error": "No items selected to return."}), 400
+
+    conn = get_db()
+    bill = conn.execute("SELECT * FROM bills WHERE id = ?", (bill_id,)).fetchone()
+    if bill is None:
+        conn.close()
+        return jsonify({"error": "Bill not found."}), 404
+
+    return_lines = []
+    for req in requested_lines:
+        bill_item_id = int(req["bill_item_id"])
+        quantity = int(req["quantity"])
+        if quantity <= 0:
+            conn.close()
+            return jsonify({"error": "Return quantity must be positive."}), 400
+
+        bill_item = conn.execute(
+            "SELECT * FROM bill_items WHERE id = ? AND bill_id = ?", (bill_item_id, bill_id)
+        ).fetchone()
+        if bill_item is None:
+            conn.close()
+            return jsonify({"error": f"Bill item {bill_item_id} not found on this bill."}), 400
+
+        returned_so_far = already_returned_quantity(conn, bill_item_id)
+        returnable = bill_item["quantity"] - returned_so_far
+        if quantity > returnable:
+            conn.close()
+            return jsonify({
+                "error": f"Cannot return {quantity} of '{bill_item['product_name']}': "
+                         f"only {returnable} remaining returnable "
+                         f"(purchased {bill_item['quantity']}, already returned {returned_so_far})."
+            }), 409
+
+        refund = round(bill_item["line_total"] * quantity / bill_item["quantity"], 2)
+        return_lines.append({
+            "bill_item_id": bill_item_id,
+            "product_id": bill_item["product_id"],
+            "quantity": quantity,
+            "refund_amount": refund,
+        })
+
+    total_refund = round(sum(line["refund_amount"] for line in return_lines), 2)
+
+    try:
+        conn.execute("BEGIN")
+        conn.execute(
+            "INSERT INTO returns (bill_id, created_at, reason, refund_amount) VALUES (?, ?, ?, ?)",
+            (bill_id, datetime.now().isoformat(timespec="seconds"), reason, total_refund),
+        )
+        return_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+
+        for line in return_lines:
+            conn.execute(
+                "INSERT INTO return_items (return_id, bill_item_id, product_id, quantity, refund_amount) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (return_id, line["bill_item_id"], line["product_id"], line["quantity"],
+                 line["refund_amount"]),
+            )
+            conn.execute(
+                "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
+                (line["quantity"], line["product_id"]),
+            )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": f"Return failed: {e}"}), 500
+
+    conn.close()
+    return jsonify({"return_id": return_id, "refund_amount": total_refund})
+
+
 @app.route("/history")
 def history():
     conn = get_db()
