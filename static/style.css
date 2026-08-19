@@ -149,6 +149,21 @@ input, select {
     min-height: 18px;
 }
 
+.success-text {
+    color: #1e7d32;
+    font-size: 13px;
+    min-height: 18px;
+}
+
+.muted {
+    color: #888;
+    font-size: 13px;
+}
+
+.return-qty-input {
+    width: 60px;
+}
+
 .sale-layout {
     display: grid;
     grid-template-columns: 1fr 2fr;

@@ -261,6 +261,35 @@ def already_returned_quantity(conn, bill_item_id):
     return row["qty"]
 
 
+def returnable_bill_items(conn, bill_id):
+    """Bill items for this bill annotated with how much of each is still returnable."""
+    items = conn.execute(
+        "SELECT * FROM bill_items WHERE bill_id = ? ORDER BY id", (bill_id,)
+    ).fetchall()
+    result = []
+    for item in items:
+        returned = already_returned_quantity(conn, item["id"])
+        result.append({
+            "bill_item": item,
+            "already_returned": returned,
+            "returnable_qty": item["quantity"] - returned,
+        })
+    return result
+
+
+@app.route("/returns/<int:bill_id>", methods=["GET"])
+def new_return(bill_id):
+    conn = get_db()
+    bill = conn.execute("SELECT * FROM bills WHERE id = ?", (bill_id,)).fetchone()
+    if bill is None:
+        conn.close()
+        flash("Bill not found.")
+        return redirect(url_for("history"))
+    lines = returnable_bill_items(conn, bill_id)
+    conn.close()
+    return render_template("new_return.html", bill=bill, lines=lines)
+
+
 @app.route("/returns/<int:bill_id>", methods=["POST"])
 def process_return(bill_id):
     """Process a full or partial return against an existing bill.

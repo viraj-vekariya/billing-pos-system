@@ -41,5 +41,6 @@
         <p class="thanks">Thank you for shopping with us.</p>
         <button onclick="window.print()" class="btn no-print">Print receipt</button>
         <a class="btn no-print" href="{{ url_for('new_sale') }}">New sale</a>
+        <a class="btn no-print" href="{{ url_for('new_return', bill_id=bill.id) }}">Process a return</a>
     </div>
 {% endblock %}

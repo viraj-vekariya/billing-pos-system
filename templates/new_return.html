@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Return — {{ bill.bill_number }}{% endblock %}
+{% block content %}
+    <h1>Process a return</h1>
+    <p>Bill: {{ bill.bill_number }} &middot; {{ bill.created_at }}</p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Purchased qty</th>
+                <th>Already returned</th>
+                <th>Returnable</th>
+                <th>Return qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+            <tr>
+                <td>{{ line.bill_item.product_name }} ({{ line.bill_item.sku }})</td>
+                <td>{{ line.bill_item.quantity }}</td>
+                <td>{{ line.already_returned }}</td>
+                <td>{{ line.returnable_qty }}</td>
+                <td>
+                    {% if line.returnable_qty > 0 %}
+                    <input type="number" class="return-qty-input" min="0" max="{{ line.returnable_qty }}"
+                           value="0" data-bill-item-id="{{ line.bill_item.id }}">
+                    {% else %}
+                    <span class="muted">fully returned</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <label>Reason (optional)
+        <input type="text" id="return-reason">
+    </label>
+
+    <button type="button" class="btn btn-primary" id="submit-return-btn">Process return</button>
+    <p id="return-error" class="error-text"></p>
+    <p id="return-success" class="success-text"></p>
+
+    <script src="{{ url_for('static', filename='returns.js') }}" data-bill-id="{{ bill.id }}"></script>
+{% endblock %}
