@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS return_items;
+DROP TABLE IF EXISTS returns;
 DROP TABLE IF EXISTS bill_items;
 DROP TABLE IF EXISTS bills;
 DROP TABLE IF EXISTS products;
@@ -37,4 +39,24 @@ CREATE TABLE bill_items (
     line_subtotal REAL NOT NULL,
     line_tax REAL NOT NULL,
     line_total REAL NOT NULL
+);
+
+-- A return is its own auditable record against an existing bill - it never
+-- mutates the original bill/bill_items rows, so a bill's totals always
+-- reflect what was actually sold at the time of sale.
+CREATE TABLE returns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_id INTEGER NOT NULL REFERENCES bills(id),
+    created_at TEXT NOT NULL,
+    reason TEXT,
+    refund_amount REAL NOT NULL
+);
+
+CREATE TABLE return_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    return_id INTEGER NOT NULL REFERENCES returns(id),
+    bill_item_id INTEGER NOT NULL REFERENCES bill_items(id),
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL,
+    refund_amount REAL NOT NULL
 );
