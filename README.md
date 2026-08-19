@@ -89,12 +89,21 @@ This matters because a POS silently fulfilling half a sale (charging for 5 items
 - New sale screen: pick a product + quantity, build a cart client-side, remove lines before checkout, apply an optional flat or percent discount, choose a payment method
 - Checkout: server recomputes and validates everything (never trusts the client's displayed totals), decrements stock, generates a bill number (`INV-YYYYMMDD-NNN`)
 - Receipt view: printable HTML page (browser print / "save as PDF" works fine — no PDF library used)
-- Sales history: list of all past bills
+- Returns/refunds: full or partial return against any past bill, restocks the returned quantity and refunds proportionally to what was actually charged
+- Sales history: list of all past bills, with a link to process a return against each
 - Reports: revenue + bill count for a chosen day, all-time totals, top-5 products by quantity sold and by revenue
+
+## Returns/refunds
+
+A return is processed against a specific bill's line items (`/returns/<bill_id>`), not against the bill as a whole — you can return 2 of the 5 units on a line and leave the other 3 sold. Each return is its own row in a `returns`/`return_items` table; the original `bill`/`bill_items` rows are never mutated, so a receipt always shows exactly what was charged at sale time.
+
+**Refund amount comes from the bill item's own `line_total`, not from re-deriving a price.** `line_total` was already computed at checkout with that line's proportional share of any cart-wide discount and its own tax rate baked in (see the billing math above), so `refund = line_total * returned_qty / original_qty` automatically refunds at the price the customer actually paid — a return on a bill with a 10% discount refunds 10% less than the same return would on a full-price bill, without the returns code needing to know anything about discounts itself.
+
+Validation before any write: the bill item must belong to the bill being returned against, the requested quantity must be positive, and it can't exceed `original_qty - already_returned` (summed live from prior `return_items` rows) — so a line can be returned across multiple partial returns but never refunded twice for the same unit. A valid return inserts the `returns`/`return_items` rows and restocks each product's `stock_quantity` inside a single transaction, same atomicity pattern as checkout.
 
 ## Testing
 
-`compute_totals` (per-line tax, proportional discounts, rounding) and the product/checkout routes (duplicate SKU, negative price, insufficient stock, atomic-sale rollback) are covered with pytest, run against a temporary SQLite file so it never touches `instance/pos.db`.
+`compute_totals` (per-line tax, proportional discounts, rounding), the product/checkout routes (duplicate SKU, negative price, insufficient stock, atomic-sale rollback), and returns (full/partial refund amount, discount-proportional refund, restock, double-return and over-return rejection) are covered with pytest, run against a temporary SQLite file so it never touches `instance/pos.db`.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -104,7 +113,7 @@ pytest tests/ -v
 ## Limitations (honestly)
 
 - Single till / single user — no login, no cashier accounts, no concurrent-register handling beyond SQLite's own transaction locking
-- No refunds/returns workflow — a finalized bill's stock and totals are permanent
+- Returns have no reason-code enforcement or approval workflow (a free-text reason is optional, not required or validated), no refund-to-original-payment-method tracking, and no returns line on the Reports page yet
 - No cash drawer, printer, or barcode scanner hardware integration; "receipt" is an HTML page, not a real print job or PDF
 - No multi-currency, no per-customer accounts, no loyalty/coupons beyond the one discount applied at checkout
 - Discount is cart-wide only, not itemized per product
